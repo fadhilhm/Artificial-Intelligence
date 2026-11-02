@@ -9,9 +9,13 @@ public class Main {
         n = sc.nextInt();
         p = sc.nextInt();
 
+        char[][] petaGrid = new char[m][n];
+
         for (int i = 0; i < m; i++) {
+            String line = sc.next();
+            
             for (int j = 0; j < n; j++) {
-                
+                petaGrid[i][j] = line.charAt(j);
             }
         }
 
