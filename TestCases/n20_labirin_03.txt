@@ -1,0 +1,21 @@
+20 20 3
+.....HTT....T.....TT
+.T...T.......H...TTT
+...T...TTH.HT....TTT
+T...TT...H.T..THTTTT
+TH.T.....TT......TTT
+TT.T..HTT.T....T..TT
+TT...T......THTTTHTT
+HTT.T..THT.HHTT....T
+.......TT........T..
+.......T..T.....T..H
+H.T...T...TT.TT...TT
+...TT..H...T.H.T..HT
+...TTH.T..TH...T..HT
+..TTT....TTH.TT....T
+..H.HT...TH.....HH..
+....T....H....TT.H..
+..TTH.H.H...TT...T..
+....THT.TTT.....TTT.
+.T.TT.....T.....THH.
+........T..HH..TT...
