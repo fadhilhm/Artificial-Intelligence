@@ -11,7 +11,13 @@ public class Population {
         this.individuals = new Individual[populationSize];
     }
 
-    public int initializeRandomPopulation(int totalEmptyCells, int p, Random rand) {
+    /**
+     * Membuat populasi individual secara random 
+     * @param totalEmptyCells banyak cell dalam grid yang kosong (tidak ada Tree atau House)
+     * @param p banyak Fire Station dalam individu
+     * @param rand object Random
+     * */
+    public void initializeRandomPopulation(int totalEmptyCells, int p, Random rand) {
         for (int i = 0; i < individuals.length; i++) {
             int[] chromosome = new int[p];
             boolean[] used = new boolean[totalEmptyCells];
@@ -29,5 +35,21 @@ public class Population {
 
             individuals[i] = new Individual(chromosome);
         }
+    }
+
+    public Individual getIndividual(int index) {
+        return this.individuals[index];
+    }
+
+    public int getPopulationSize() {
+        return this.individuals.length;
+    }
+
+    public void sortByFitness() {
+        Arrays.sort(this.individuals);
+    }
+
+    public Individual getBestIndividual() {
+        return this.individuals[0];
     }
 }
