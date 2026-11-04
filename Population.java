@@ -12,7 +12,6 @@ public class Population {
     }
 
     /**
-     * Membuat populasi individual secara random 
      * @param totalEmptyCells banyak cell dalam grid yang kosong (tidak ada Tree atau House)
      * @param p banyak Fire Station dalam individu
      * @param rand object Random
