@@ -40,6 +40,10 @@ public class Population {
     public Individual getIndividual(int index) {
         return this.individuals[index];
     }
+    
+    public void setIndividual(int index, Individual individual) {
+        this.individuals[index] = individual;
+    }
 
     public int getPopulationSize() {
         return this.individuals.length;
