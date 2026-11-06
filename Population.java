@@ -19,7 +19,7 @@ public class Population {
     public void initializeRandomPopulation(int totalEmptyCells, int p, Random rand) {
         for (int i = 0; i < individuals.length; i++) {
             int[] chromosome = new int[p];
-            boolean[] used = new boolean[totalEmptyCells];
+            boolean[] used = new boolean[totalEmptyCells + 1];
 
             int count = 0;
             while (count < p) {
