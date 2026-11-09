@@ -17,19 +17,19 @@ public class SinglePointCrossover implements Crossover {
      * 
      * @param parent1         Induk pertama (Parent 1) yang menjadi sumber genetik
      * @param parent2         Induk kedua (Parent 2) yang menjadi sumber genetik
-     * @param crossoverProb   Nilai probabilitas crossover (peluang terjadinya persilangan, misal 0.8 atau 80%)
+     * @param crossoverRate   Nilai probabilitas crossover (peluang terjadinya persilangan, misal 0.8 atau 80%)
      * @param p               Ukuran atau panjang kromosom (jumlah total Fire Station yang ditempatkan)
      * @param totalEmptyCells Batas maksimum nilai ID sel kosong yang valid pada peta grid
      * @param rand            Objek Random untuk pengundian nilai peluang acak secara probabilistik
      * @return                Array berisi dua objek Individual baru hasil keturunan (offspring)
      */
     @Override
-    public Individual[] crossover(Individual parent1, Individual parent2, double crossoverProb, int p, int totalEmptyCells, Random rand) {
+    public Individual[] crossover(Individual parent1, Individual parent2, double crossoverRate, int p, int totalEmptyCells, Random rand) {
         // Menyiapkan array penampung untuk 2 anak (offspring) yang akan dilahirkan
         Individual[] offsprings = new Individual[2];
 
         // Mengecek apakah angka acak memenuhi peluang crossover dan apakah panjang kromosom > 1
-        if (rand.nextDouble() < crossoverProb && p > 1) {
+        if (rand.nextDouble() < crossoverRate && p > 1) {
             // Menentukan titik potong (cut point) secara acak dalam rentang 1 sampai (p - 1)
             int cutPoint = rand.nextInt(p - 1) + 1;
             

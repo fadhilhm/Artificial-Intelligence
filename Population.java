@@ -39,6 +39,10 @@ public class Population {
     public Individual getIndividual(int index) {
         return this.individuals[index];
     }
+
+    public Individual[] getIndividuals() {
+        return this.individuals;
+    }
     
     public void setIndividual(int index, Individual individual) {
         this.individuals[index] = individual;
