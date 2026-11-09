@@ -1,69 +1,115 @@
+import java.util.Arrays;
 import java.util.Random;
 
+/**
+ * Kelas ini mengimplementasikan interface Crossover menggunakan metode 
+ * Single-Point Crossover yang disesuaikan untuk masalah kombinasi subset 
+ * (pencarian posisi Fire Station pada grid peta). 
+ * 
+ * Dilengkapi dengan fungsi perbaikan (repair) otomatis untuk memastikan 
+ * tidak ada ID Fire Station yang duplikat atau tidak valid pada anak (offspring).
+ */
 public class SinglePointCrossover implements Crossover {
     
-    @Override 
-    /** 
-     * @param p1                lokasi dari fire station pertama
-     * @param p2                lokasi dari fire station kedua
-     * @param pc                nilai dari probabilitas crossover 
-     * @param p                 ukuran dari array chromosome (banyak fire station)
-     * @param totalEmptyCells   batas max index cell value pada grid
-     * @param md                object Random untuk memilih titik potong secara probabilistik
+    /**
+     * Melakukan proses persilangan (crossover) satu titik potong antara dua induk 
+     * untuk menghasilkan dua individu keturunan (offspring).
+     * 
+     * @param parent1         Induk pertama (Parent 1) yang menjadi sumber genetik
+     * @param parent2         Induk kedua (Parent 2) yang menjadi sumber genetik
+     * @param crossoverProb   Nilai probabilitas crossover (peluang terjadinya persilangan, misal 0.8 atau 80%)
+     * @param p               Ukuran atau panjang kromosom (jumlah total Fire Station yang ditempatkan)
+     * @param totalEmptyCells Batas maksimum nilai ID sel kosong yang valid pada peta grid
+     * @param rand            Objek Random untuk pengundian nilai peluang acak secara probabilistik
+     * @return                Array berisi dua objek Individual baru hasil keturunan (offspring)
      */
-    public Individual[] crossover(Individual p1, Individual p2, double pc, int p, int totalEmptyCells, Random md) {
-        // cek probabilitas crossover (pc)
-        if (md.nextDouble() > pc) {
-            // jika peluang acak lebih besar dari probabilitas crossover (pc), 
-            // maka return persilangan individu nya
-            return new Individual[] {
-                p1.getClone(),
-                p2.getClone()
-            };
-        }   
-         
-        Individual parent1[] = p1.getChromosome();
-        Individual parent2[] = p2.getChromosome();
-        Individual child1[] = new int[p];
-        Individual child2[] = new int[p];
+    @Override
+    public Individual[] crossover(Individual parent1, Individual parent2, double crossoverProb, int p, int totalEmptyCells, Random rand) {
+        // Menyiapkan array penampung untuk 2 anak (offspring) yang akan dilahirkan
+        Individual[] offsprings = new Individual[2];
 
-        // menentukan titik potong (rentang 1 - p-1)
-        int cutPoint = md.nextInt(p - 1) + 1;
+        // Mengecek apakah angka acak memenuhi peluang crossover dan apakah panjang kromosom > 1
+        if (rand.nextDouble() < crossoverProb && p > 1) {
+            // Menentukan titik potong (cut point) secara acak dalam rentang 1 sampai (p - 1)
+            int cutPoint = rand.nextInt(p - 1) + 1;
+            
+            // Inisialisasi array kromosom mentah untuk anak pertama (c1) dan anak kedua (c2)
+            int[] c1 = new int[p];
+            int[] c2 = new int[p];
 
-        // bikin segment kiri untuk anak 1 dari parent 1 dan anak 2 dari parent 2
-        for (int i = 0; i < cutPoint - 1; i++) {
-            child1[i] = parent1[i];
-            child2[i] = parent2[i];
+            // Melakukan perulangan untuk menukar segmen gen antar parent berdasarkan cutPoint
+            for (int i = 0; i < p; i++) {
+                if (i < cutPoint) {
+                    // Sebelum titik potong: Anak 1 mewarisi dari Parent 1, Anak 2 mewarisi dari Parent 2
+                    c1[i] = parent1.getChromosome()[i];
+                    c2[i] = parent2.getChromosome()[i];
+                } else {
+                    // Setelah titik potong: Anak 1 mewarisi dari Parent 2, Anak 2 mewarisi dari Parent 1
+                    c1[i] = parent2.getChromosome()[i];
+                    c2[i] = parent1.getChromosome()[i];
+                }
+            }
+            
+            // Menjalankan fungsi repair untuk membersihkan duplikat & memastikan validitas,
+            // lalu membungkus hasilnya ke dalam objek Individual baru untuk anak pertama dan kedua.
+            offsprings[0] = new Individual(repair(c1, p, totalEmptyCells, rand));
+            offsprings[1] = new Individual(repair(c2, p, totalEmptyCells, rand));
+        } else {
+            // Jika tidak memenuhi probabilitas crossover, anak menjadi salinan (clone) persis dari parent masing-masing
+            offsprings[0] = parent1.getClone();
+            offsprings[1] = parent2.getClone();
         }
 
-        // bikin chromosome anak 1
-        int child1Idx = cutPoint;
-        for (int i = 0; i < p - 1; i++) {
-            int valueParent2 = parent2[i];
-            // (repair) cek apakah valueParent2 itu udah ada di bagian kiri anak 1
-            if (!contains(child1, valueParent2, cutPoint)) {
-                child1[child1Idx] = valueParent2;
-                child1Idx++;
+        // Mengembalikan array yang berisi kedua anak hasil proses
+        return offsprings;
+    }
+
+    /**
+     * Memperbaiki kromosom anak hasil persilangan mentah guna menghilangkan nilai duplikat, 
+     * mencegah nilai kosong/cacat, serta mengurutkan ID sel secara ascending.
+     * 
+     * @param chromosome      Array kromosom anak mentah (raw chromosome) hasil persilangan
+     * @param p               Ukuran atau panjang kromosom target yang harus dipenuhi
+     * @param totalEmptyCells Batas maksimum nilai ID sel kosong yang tersedia di peta
+     * @param rand            Objek Random untuk memilih ID sel pengganti secara acak jika ada kekurangan gen
+     * @return                Array kromosom baru berukuran 'p' yang sudah valid, unik, dan terurut
+     */
+    private int[] repair(int[] chromosome, int p, int totalEmptyCells, Random rand) {
+        // Membuat array boolean untuk menandai ID sel mana saja yang sudah aktif/terpakai (indeks 1 sampai totalEmptyCells)
+        boolean[] active = new boolean[totalEmptyCells + 1];
+        
+        // Memeriksa gen pada kromosom mentah dan menandai nilai yang valid & unik
+        for (int val : chromosome) {
+            if (val > 0 && val <= totalEmptyCells && !active[val]) {
+                active[val] = true;
             }
         }
-
-        // bikin chromosome anak 2
-        int child2Idx = cutPoint;
-        for (int i = 0; i < p - 1; i++) {
-            int valueParent1 = parent1[i];
-            // (repair) cek apakah valueParent1 itu udah ada di bagian kiri anak 2
-            if (!contains(child2, valueParent1, cutPoint)) {
-                child2[child2Idx] = valueParent1;
-                child2Idx++;
+        
+        // Menyiapkan array penampung final berukuran 'p' dan indeks pelacak
+        int[] repaired = new int[p];
+        int idx = 0;
+        
+        // Memasukkan kembali gen-gen unik yang valid dari penanda 'active' ke array 'repaired'
+        for (int i = 1; i <= totalEmptyCells && idx < p; i++) {
+            if (active[i]) {
+                repaired[idx++] = i;
             }
         }
-
-        // return kedua child
-        Individual child1 = new Individual(child1);
-        Individual child2 = new Individual(child2);
-        return new Individual[] {
-            child1,
-            child2
+        
+        // Jika jumlah gen kurang dari 'p' (karena ada duplikat yang dibuang sebelumnya),
+        // cari sel kosong alternatif lain secara acak untuk mengisi kekurangan slot tersebut.
+        while (idx < p) {
+            int randCell = rand.nextInt(totalEmptyCells) + 1;
+            if (!active[randCell]) {
+                active[randCell] = true;
+                repaired[idx++] = randCell;
+            }
         }
+        
+        // Mengurutkan elemen di dalam kromosom secara ascending agar rapi dan konsisten
+        Arrays.sort(repaired);
+        
+        // Mengembalikan array kromosom yang sudah diperbaiki dan siap digunakan
+        return repaired;
     }
 }
