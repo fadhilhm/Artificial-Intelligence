@@ -59,8 +59,9 @@ public class Individual implements Comparable<Individual> {
         return clone;
     }
 
+    // sort dari fitness terbesar ke terkecil
     @Override 
     public int compareTo(Individual other) {
-        return Double.compare(this.fitness, other.fitness);
+        return Double.compare(other.fitness, this.fitness);
     }
 }

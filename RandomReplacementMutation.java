@@ -1,3 +1,4 @@
+import java.util.Arrays;
 import java.util.Random;
 
 /**
@@ -22,7 +23,8 @@ public class RandomReplacementMutation implements Mutation {
      */
     @Override
     public void mutate(Individual individual, double mutationRate, int totalEmptyCells, Random rand) {
-        int[] chromosome = individual.getChromosome();
+        int[] chromosome = individual.getChromosome(); 
+
         boolean isMutated = false;
 
         for (int i = 0; i < chromosome.length; i++) {
@@ -54,6 +56,8 @@ public class RandomReplacementMutation implements Mutation {
         // Jika terjadi perubahan, update kromosom dan reset nilai fitness/cost
         // karena individu ini harus dievaluasi ulang
         if (isMutated) {
+            Arrays.sort(chromosome);
+
             individual.setChromosome(chromosome);
             individual.setCost(0.0);
             individual.setFitness(0.0);

@@ -1,6 +1,14 @@
 import java.util.*;
 
 public class Main {
+    final static int TOURNAMENT_SIZE = 3;
+    final static double MUTATION_RATE = 0.005; // pastikan kurang dari 1%
+    final static double ELITISM_RATE = 0.1; 
+    final static double CROSSOVER_RATE = 1; // ada hanya agar "modular"
+    final static long SEED = System.currentTimeMillis(); // gunakan nilai long agar deterministik atau System.currentTimeMillis() agar random
+    final static int MAX_GENERATION = 500; // berapa kali Genetic Algorithm berjalan
+    final static int POPULATION_SIZE = 100; 
+
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
         
@@ -26,6 +34,8 @@ public class Main {
             }
             rowsRead++;
         }
+
+        scanner.close();
 
         int penaltyValue = m * n;
 
@@ -68,18 +78,18 @@ public class Main {
         }
 
         // 5. Inisialisasi Populasi Awal
-        int populationSize = 50;
+        int populationSize = POPULATION_SIZE;
         Population population = new Population(populationSize);
-        population.initializeRandomPopulation(totalEmptyCells, p, new Random(100));
+        population.initializeRandomPopulation(totalEmptyCells, p, new Random(SEED));
 
         // 6. Inisialisasi Mesin GA dengan Strategy Pattern
         GeneticAlgorithm ga = new GeneticAlgorithm(
             distanceMatrix, numHouses, totalEmptyCells, p, penaltyValue,
-            0.8,   // crossover rate
-            0.005,  // mutation rate
-            0.10,  // elitism rate (20%)
-            100,    // seed acak
-            new TournamentSelection(3),      // Strategi Seleksi (k=3)
+            CROSSOVER_RATE,   // crossover rate
+            MUTATION_RATE,  // mutation rate
+            ELITISM_RATE,  // elitism rate
+            SEED,    // seed acak
+            new TournamentSelection(TOURNAMENT_SIZE),      // Strategi Seleksi (k=3)
             new SinglePointCrossover(),                     // Strategi Crossover + Repair
             new RandomReplacementMutation(),                // Strategi Mutasi
             EvolutionModel.GENERATIONAL                     // Model Generasi
@@ -90,7 +100,7 @@ public class Main {
         ga.evaluatePopulation(population);
 
         // 7. Jalankan Looping Generasi (Misal: 100 generasi)
-        int maxGenerations = 100;
+        int maxGenerations = MAX_GENERATION;
         for (int gen = 1; gen <= maxGenerations; gen++) {
             ga.evolveStep(population);
         }

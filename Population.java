@@ -19,7 +19,7 @@ public class Population {
     public void initializeRandomPopulation(int totalEmptyCells, int p, Random rand) {
         for (int i = 0; i < individuals.length; i++) {
             int[] chromosome = new int[p];
-            boolean[] used = new boolean[totalEmptyCells];
+            boolean[] used = new boolean[totalEmptyCells+1];
 
             int count = 0;
             while (count < p) {
@@ -51,11 +51,11 @@ public class Population {
     public int getPopulationSize() {
         return this.individuals.length;
     }
-
+    
     public void sortByFitness() {
         Arrays.sort(this.individuals);
     }
-
+    
     public Individual getBestIndividual() {
         return this.individuals[0];
     }
