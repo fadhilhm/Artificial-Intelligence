@@ -1,17 +1,30 @@
 import java.util.*;
+import java.io.*;
 
 public class Main {
-    final static int TOURNAMENT_SIZE = 3;
-    final static double MUTATION_RATE = 0.005; // pastikan kurang dari 1%
-    final static double ELITISM_RATE = 0.1; 
-    final static double CROSSOVER_RATE = 1; // ada hanya agar "modular"
-    final static long SEED = System.currentTimeMillis(); // gunakan nilai long agar deterministik atau System.currentTimeMillis() agar random
-    final static int MAX_GENERATION = 500; // berapa kali Genetic Algorithm berjalan
-    final static int POPULATION_SIZE = 100; 
+    static int MAX_GENERATION; // berapa kali Genetic Algorithm berjalan
+    static int POPULATION_SIZE; 
+    static int TOURNAMENT_SIZE;
+    static double CROSSOVER_RATE; // ada hanya agar "modular"
+    static double MUTATION_RATE; // pastikan kurang dari 1%
+    static double ELITISM_RATE; 
+    static long SEED = System.currentTimeMillis(); // gunakan nilai long agar deterministik atau System.currentTimeMillis() agar random
 
-    public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
+    public static void main(String[] args) throws FileNotFoundException {
+        Scanner scanner = new Scanner(new File(args[0]));
+
+        // 0. Membaca args, gunakan config.txt
+        MAX_GENERATION = scanner.nextInt();
+        POPULATION_SIZE = scanner.nextInt();
+        TOURNAMENT_SIZE = scanner.nextInt();
+        CROSSOVER_RATE = scanner.nextDouble();
+        MUTATION_RATE = scanner.nextDouble();
+        ELITISM_RATE = scanner.nextDouble();
         
+        scanner.close();
+
+        scanner = new Scanner(System.in);
+
         // 1. Membaca m, n, p file input.txt
         int m = scanner.nextInt();
         int n = scanner.nextInt();
@@ -109,18 +122,24 @@ public class Main {
         population.sortByFitness();
         Individual best = population.getBestIndividual();
 
-        System.out.println("=========================================");
-        System.out.println("   HASIL AKHIR ALGORITMA GENETIK (GA)    ");
-        System.out.println("=========================================");
-        System.out.println("Cost Terbaik (RMS Distance) : " + best.getCost());
-        System.out.println("Fitness Terbaik             : " + best.getFitness());
-        System.out.println("\nTitik Penempatan Fire Station Optimal:");
-        
-        int counter = 1;
+        System.out.printf("%d %.5f\n", p, best.getCost());
         for (int cellId : best.getChromosome()) {
             Point pt = cellCoordinates[cellId];
-            System.out.println("  " + counter++ + ". ID Sel: " + cellId + " -> Koordinat (Baris: " + pt.row + ", Kolom: " + pt.col + ")");
+            System.out.printf("%d %d\n", pt.row, pt.col);
         }
-        System.out.println("=========================================");
+
+        // System.out.println("=========================================");
+        // System.out.println("   HASIL AKHIR ALGORITMA GENETIK (GA)    ");
+        // System.out.println("=========================================");
+        // System.out.println("Cost Terbaik (RMS Distance) : " + best.getCost());
+        // System.out.println("Fitness Terbaik             : " + best.getFitness());
+        // System.out.println("\nTitik Penempatan Fire Station Optimal:");
+        
+        // int counter = 1;
+        // for (int cellId : best.getChromosome()) {
+        //     Point pt = cellCoordinates[cellId];
+        //     System.out.println("  " + counter++ + ". ID Sel: " + cellId + " -> Koordinat (Baris: " + pt.row + ", Kolom: " + pt.col + ")");
+        // }
+        // System.out.println("=========================================");
     }
 }
