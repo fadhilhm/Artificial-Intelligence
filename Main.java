@@ -21,53 +21,73 @@ public class Main {
             // "TestCases/n80_labirin_01.txt",
     };
 
-    // config genetic algo
-    static final int POP_SIZE       = 100;
+    // tidak dibaca dari config
     static final int TOURN_SIZE     = 3;
-    static final double PC          = 0.8;
-    static final double PM          = 0.05;
-    static final double ELITISM     = 0.20;
+    static final int MAX_STAGNANT   = 200;
 
     // seed
     static final int NPM = 24056;
     static final int NUM_SEEDS = 30;
 
-    // kondisi berhenti lain
-    static final int MAX_STAGNANT = 200;
-
-    // Menyimpan jumlah evaluasi dari runGA terakhir untuk CSV
+    // menghitung berapa kali populasi dievaluasi
     static int lastEvalCount;
+
+    // ============================================================
+    // CONFIG
+    // ============================================================
+
+    // config genetic algo (dibaca dari file)
+    static class Config {
+        int popSize;
+        double pc, pm, elitism;
+    }
+
+    // baca config dari file, format: popSize pc pm elitism
+    static Config readConfig(String path) throws Exception {
+        Scanner sc = new Scanner(new File(path));
+        Config c = new Config();
+        c.popSize = sc.nextInt();
+        c.pc      = sc.nextDouble();
+        c.pm      = sc.nextDouble();
+        c.elitism = sc.nextDouble();
+        sc.close();
+        return c;
+    }
 
     public static void main(String[] args) throws Exception {
         // java Main config.txt TestCases/xxx.txt       -> single run, grid dari file
-        // java Main experiment out.csv                 -> eksperimen semua MAP_FILES
+        // java Main config.txt experiment out.csv      -> eksperimen semua MAP_FILES
         //
         // Format config.txt: popSize pc pm elitism
-        if (args[0].equalsIgnoreCase("experiment")) {
-            runExperiment(args[1]);
+        if (args.length < 2) {
+            System.err.println("Usage:");
+            System.err.println("  java Main config.txt experiment output.csv");
+            System.err.println("  java Main config.txt TestCases/xxx.txt");
+            return;
+        }
+
+        String configFile = args[0];
+        Config cfg = readConfig(configFile);
+
+        if (args.length >= 3 && args[1].equalsIgnoreCase("experiment")) {
+            runExperiment(cfg, args[2]);
         } else {
-            runSingle(args[0], args[1]);
+            runSingle(cfg, args[1]);
         }
     }
 
     // run sekali untuk percobaan
-    static void runSingle(String configFile, String mapFile) throws Exception {
-        Scanner cfg = new Scanner(new File(configFile));
-        int popSize = cfg.nextInt();
-        double pc = cfg.nextDouble();
-        double pm = cfg.nextDouble();
-        double elitism = cfg.nextDouble();
-        cfg.close();
-
+    static void runSingle(Config cfg, String mapFile) throws Exception {
         int sizeNumber = sizeNumberFromFilename(mapFile);
         int budget = budgetForSize(sizeNumber);
-        int maxGen = budget / popSize;
+        int maxGen = budget / cfg.popSize;
 
         Preprocessed prep = loadAndPreprocess(mapFile);
 
         long seed = System.currentTimeMillis();
 
-        Individual best = runGA(prep, popSize, TOURN_SIZE, pc, pm, elitism, maxGen, seed);
+        Individual best = runGA(prep, cfg.popSize, TOURN_SIZE,
+                cfg.pc, cfg.pm, cfg.elitism, maxGen, seed);
 
         System.out.printf("%d %.5f%n", prep.p, best.getCost());
         for (int cellId : best.getChromosome()) {
@@ -77,7 +97,7 @@ public class Main {
     }
 
     // loop dari map files, terus isi ke dalam csv
-    static void runExperiment(String outputCsv) throws Exception {
+    static void runExperiment(Config cfg, String outputCsv) throws Exception {
         int[] seeds = new int[NUM_SEEDS];
         Random r = new Random(NPM);
         for (int i = 0; i < NUM_SEEDS; i++) {
@@ -93,15 +113,15 @@ public class Main {
                 int budget = budgetForSize(sizeNumber);
 
                 // maxGen dihitung dari budget / popSize
-                int maxGen = budget / POP_SIZE;
+                int maxGen = budget / cfg.popSize;
 
                 for (int seed : seeds) {
-                    Individual best = runGA(prep, POP_SIZE, TOURN_SIZE,
-                            PC, PM, ELITISM, maxGen, seed);
+                    Individual best = runGA(prep, cfg.popSize, TOURN_SIZE,
+                            cfg.pc, cfg.pm, cfg.elitism, maxGen, seed);
 
                     out.printf("%s,%d,%.2f,%.2f,%.2f,%.6f,%d%n",
                             new File(path).getName(),
-                            POP_SIZE, PC, PM, ELITISM,
+                            cfg.popSize, cfg.pc, cfg.pm, cfg.elitism,
                             best.getCost(), lastEvalCount);
                 }
             }
@@ -214,7 +234,7 @@ public class Main {
             }
         }
 
-        lastEvalCount = ga.getEvaluationCount();        
+        lastEvalCount = ga.getEvaluationCount();
         return population.getBestIndividual();
     }
 
