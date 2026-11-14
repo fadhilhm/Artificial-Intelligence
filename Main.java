@@ -1,6 +1,7 @@
 import java.util.*;
 
 import model.*;
+import model.Individual.ChromosomeType;
 import mutation.*;
 import selection.*;
 import crossover.*;
@@ -27,9 +28,12 @@ public class Main {
             // "TestCases/n80_labirin_01.txt",
     };
 
-    // tidak dibaca dari config
-    static final int TOURN_SIZE     = 3;
-    static final int MAX_STAGNANT   = 200;
+    // tidak dibaca dari config, ubah disini
+    static final int MAX_STAGNANT               = 200;
+    static final Crossover CROSSOVER_TYPE       = new SinglePointCrossover();
+    static final Mutation MUTATION_TYPE         = new RandomReplacementMutation();
+    static final Selection SELECTION_TYPE       = new TournamentSelection(3);
+    static final ChromosomeType CHROMOSOME_TYPE = ChromosomeType.BIT_STRING;
 
     // seed
     static final int NPM = 24056;
@@ -87,11 +91,11 @@ public class Main {
         int maxGen = budget / cfg.populationSize;
         long seed = System.currentTimeMillis();
 
-        Individual best = runGA(prep, cfg.populationSize, TOURN_SIZE,
+        Individual best = runGA(prep, cfg.populationSize,
                 cfg.pc, cfg.pm, cfg.elitism, maxGen, seed);
 
         System.out.printf("%d %.5f%n", prep.p, best.getCost());
-        for (int cellId : best.getChromosome()) {
+        for (int cellId : best.getSelectedIds()) {
             Point pt = prep.cellCoords[cellId];
             System.out.printf("%d %d%n", pt.col + 1, pt.row + 1);
         }
@@ -106,7 +110,7 @@ public class Main {
         }
 
         try (PrintWriter out = new PrintWriter(outputCsv)) {
-            out.println("map,pop_size,pc,pm,elitism,cost,eval_count");
+            out.println("map,pop_size,pc,pm,elitism,cost");
 
             for (String path : MAP_FILES) {
                 Preprocessed prep = loadAndPreprocess(path);
@@ -117,13 +121,13 @@ public class Main {
                 int maxGen = budget / cfg.populationSize;
 
                 for (int seed : seeds) {
-                    Individual best = runGA(prep, cfg.populationSize, TOURN_SIZE,
+                    Individual best = runGA(prep, cfg.populationSize,
                             cfg.pc, cfg.pm, cfg.elitism, maxGen, seed);
 
-                    out.printf("%s,%d,%.2f,%.2f,%.2f,%.6f,%d%n",
+                    out.printf("%s,%d,%.2f,%.2f,%.2f,%.6f%n",
                             new File(path).getName(),
                             cfg.populationSize, cfg.pc, cfg.pm, cfg.elitism,
-                            best.getCost(), lastEvalCount);
+                            best.getCost());
                 }
             }
         }
@@ -201,12 +205,12 @@ public class Main {
     }
 
     // Jalankan GA sebanyak maxGen generasi
-    static Individual runGA(Preprocessed prep, int populationSize, int tournSize,
+    static Individual runGA(Preprocessed prep, int populationSize,
                             double pc, double pm, double elitism,
                             int maxGen, long seed) {
 
         Population population = new Population(populationSize);
-        population.initializeRandomPopulation(prep.totalEmpty, prep.p, new Random(seed));
+        population.initializeRandomPopulation(prep.totalEmpty, prep.p, new Random(seed), CHROMOSOME_TYPE);
 
         GeneticAlgorithm ga = new GeneticAlgorithm(
                 prep.distance, prep.numHouses, prep.totalEmpty, prep.p, prep.penalty,

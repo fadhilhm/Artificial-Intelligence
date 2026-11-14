@@ -26,23 +26,31 @@ public class RandomReplacementMutation implements Mutation {
      *                        dan ID sel baru.
      */
     @Override
-    public void mutate(Individual individual, double mutationRate, int totalEmptyCells, Random rand) {
-        int[] chromosome = individual.getChromosome(); 
+        public void mutate(Individual individual, double mutationRate,
+                       int totalEmptyCells, Random rand) {
+        if (individual.getType() == Individual.ChromosomeType.ARRAY_FS) {
+            mutateArrayFS(individual, mutationRate, totalEmptyCells, rand);
+        } else {
+            mutateBitString(individual, mutationRate, totalEmptyCells, rand);
+        }
+    }
 
+    /**
+     * per gen, dengan probabilitas, ganti dengan
+     * ID sel kosong baru yang belum dipakai.
+     */
+    private void mutateArrayFS(Individual individual, double mutationRate,
+                               int totalEmptyCells, Random rand) {
+        int[] chromosome = individual.getChromosome();
         boolean isMutated = false;
 
         for (int i = 0; i < chromosome.length; i++) {
-            // Cek apakah gen pada index 'i' ini akan mengalami mutasi
             if (rand.nextDouble() < mutationRate) {
                 int newCellID;
                 boolean isDuplicate;
-
-                // Cari ID sel kosong baru yang belum digunakan di kromosom saat ini
                 do {
                     isDuplicate = false;
-                    newCellID = rand.nextInt(totalEmptyCells) + 1; // index 1-based (1 s.d totalEmptyCells)
-
-                    // Validasi agar gen baru tidak sama dengan titik yang sudah ada
+                    newCellID = rand.nextInt(totalEmptyCells) + 1;
                     for (int gene : chromosome) {
                         if (gene == newCellID) {
                             isDuplicate = true;
@@ -51,17 +59,55 @@ public class RandomReplacementMutation implements Mutation {
                     }
                 } while (isDuplicate);
 
-                // Ganti posisi lama dengan sel kosong baru
                 chromosome[i] = newCellID;
                 isMutated = true;
             }
         }
 
-        // Jika terjadi perubahan, update kromosom dan reset nilai fitness/cost
-        // karena individu ini harus dievaluasi ulang
         if (isMutated) {
             Arrays.sort(chromosome);
+            individual.setChromosome(chromosome);
+            individual.setCost(0.0);
+            individual.setFitness(0.0);
+        }
+    }
 
+    /**
+     * Logika untuk BIT_STRING:
+     * per gen, dengan probabilitas, pindahkan bit tersebut ke posisi lain
+     * dengan nilai berlawanan (1 -> 0 dan 0 -> 1).
+     * Hasilnya selalu menjaga jumlah 1 = p.
+     */
+    private void mutateBitString(Individual individual, double mutationRate,
+                                 int totalEmptyCells, Random rand) {
+        int[] chromosome = individual.getChromosome();
+        int len = chromosome.length;
+        if (len < 2) return;
+
+        boolean isMutated = false;
+
+        for (int i = 0; i < len; i++) {
+            if (rand.nextDouble() < mutationRate) {
+                // cari indeks j dengan nilai berlawanan
+                int targetValue = 1 - chromosome[i];
+                int j;
+                boolean found = false;
+                for (int attempt = 0; attempt < len * 2; attempt++) {
+                    j = rand.nextInt(len);
+                    if (chromosome[j] == targetValue) {
+                        // tukar
+                        chromosome[j] = chromosome[i];
+                        chromosome[i] = targetValue;
+                        isMutated = true;
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) break; // tidak ada nilai berlawanan (mis. semua 1 atau semua 0)
+            }
+        }
+
+        if (isMutated) {
             individual.setChromosome(chromosome);
             individual.setCost(0.0);
             individual.setFitness(0.0);

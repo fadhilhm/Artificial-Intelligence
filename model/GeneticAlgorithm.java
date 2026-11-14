@@ -67,13 +67,13 @@ public class GeneticAlgorithm {
      * Setiap pemanggilan menambah evaluationCount (khusus logging).
      */
     private void evaluateIndividual(Individual ind) {
-        int[] chromosome = ind.getChromosome();
+        int[] selectedIds = ind.getSelectedIds(); 
         double sumOfSquares = 0.0;
 
         for (int h = 0; h < numHouses; h++) {
             int minDistanceFromHouse = Integer.MAX_VALUE;
 
-            for (int fsId : chromosome) {
+            for (int fsId : selectedIds) {
                 int dist = distanceMatrix[h][fsId];
                 if (dist != -1 && dist < minDistanceFromHouse) {
                     minDistanceFromHouse = dist;
@@ -88,11 +88,8 @@ public class GeneticAlgorithm {
             sumOfSquares += (double) minDistanceFromHouse * minDistanceFromHouse;
         }
 
-        // Cost = RMS jarak rumah ke FS terdekat
         double cost = Math.sqrt(sumOfSquares / numHouses);
         ind.setCost(cost);
-
-        // Fitness berbanding terbalik dengan cost; epsilon menghindari Infinity
         ind.setFitness(1.0 / (cost + 1e-9));
 
         evaluationCount++;
