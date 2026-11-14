@@ -215,12 +215,9 @@ public class Main {
         GeneticAlgorithm ga = new GeneticAlgorithm(
                 prep.distance, prep.numHouses, prep.totalEmpty, prep.p, prep.penalty,
                 pc, pm, elitism, seed,
-                // new TournamentSelection(tournSize),
-                new RouletteWheelSelection(),
-                // new SinglePointCrossover(),
-                new TwoPointCrossover(),
-                // new RandomReplacementMutation(),
-                new SwapMutation(),
+                SELECTION_TYPE,
+                CROSSOVER_TYPE,
+                MUTATION_TYPE,
                 EvolutionModel.GENERATIONAL);
 
         // Evaluasi populasi awal
