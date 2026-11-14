@@ -2,144 +2,258 @@ import java.util.*;
 import java.io.*;
 
 public class Main {
-    static int MAX_GENERATION; // berapa kali Genetic Algorithm berjalan
-    static int POPULATION_SIZE; 
-    static int TOURNAMENT_SIZE;
-    static double CROSSOVER_RATE; // ada hanya agar "modular"
-    static double MUTATION_RATE; // pastikan kurang dari 1%
-    static double ELITISM_RATE; 
-    static long SEED = System.currentTimeMillis(); // gunakan nilai long agar deterministik atau System.currentTimeMillis() agar random
 
-    public static void main(String[] args) throws FileNotFoundException {
-        Scanner scanner = new Scanner(new File(args[0]));
+    // map file pilihan utk tahap 1
+    static final String[] MAP_FILES = {
+            // "TestCases/n20_acak_01.txt",
+            // "TestCases/n20_acak_02.txt",
+            // "TestCases/n20_klaster_01.txt",
+            // "TestCases/n20_labirin_01.txt",
 
-        // 0. Membaca args, gunakan config.txt
-        MAX_GENERATION = scanner.nextInt();
-        POPULATION_SIZE = scanner.nextInt();
-        TOURNAMENT_SIZE = scanner.nextInt();
-        CROSSOVER_RATE = scanner.nextDouble();
-        MUTATION_RATE = scanner.nextDouble();
-        ELITISM_RATE = scanner.nextDouble();
-        
-        scanner.close();
+            "TestCases/n40_acak_01.txt",
+            "TestCases/n40_acak_02.txt",
+            "TestCases/n40_klaster_01.txt",
+            "TestCases/n40_labirin_01.txt",
 
-        scanner = new Scanner(System.in);
+            // "TestCases/n80_acak_01.txt",
+            // "TestCases/n80_acak_02.txt",
+            // "TestCases/n80_klaster_01.txt",
+            // "TestCases/n80_labirin_01.txt",
+    };
 
-        // 1. Membaca m, n, p file input.txt
-        int m = scanner.nextInt();
-        int n = scanner.nextInt();
-        int p = scanner.nextInt();
-    
-        if (scanner.hasNextLine()) {
-            scanner.nextLine();
+    // tidak dibaca dari config
+    static final int TOURN_SIZE     = 3;
+    static final int MAX_STAGNANT   = 200;
+
+    // seed
+    static final int NPM = 24056;
+    static final int NUM_SEEDS = 30;
+
+    // menghitung berapa kali populasi dievaluasi
+    static int lastEvalCount;
+
+    // ============================================================
+    // CONFIG
+    // ============================================================
+
+    // config genetic algo (dibaca dari file)
+    static class Config {
+        int popSize;
+        double pc, pm, elitism;
+    }
+
+    // baca config dari file, format: popSize pc pm elitism
+    static Config readConfig(String path) throws Exception {
+        Scanner sc = new Scanner(new File(path));
+        Config c = new Config();
+        c.popSize = sc.nextInt();
+        c.pc      = sc.nextDouble();
+        c.pm      = sc.nextDouble();
+        c.elitism = sc.nextDouble();
+        sc.close();
+        return c;
+    }
+
+    public static void main(String[] args) throws Exception {
+        // java Main config.txt TestCases/xxx.txt       -> single run, grid dari file
+        // java Main config.txt experiment out.csv      -> eksperimen semua MAP_FILES
+        //
+        // Format config.txt: popSize pc pm elitism
+        if (args.length < 2) {
+            System.err.println("Usage:");
+            System.err.println("  java Main config.txt experiment output.csv");
+            System.err.println("  java Main config.txt TestCases/xxx.txt");
+            return;
         }
 
-        // 2. Membaca baris-baris peta grid secara dinamis sebanyak m baris
+        String configFile = args[0];
+        Config cfg = readConfig(configFile);
+
+        if (args.length >= 3 && args[1].equalsIgnoreCase("experiment")) {
+            runExperiment(cfg, args[2]);
+        } else {
+            runSingle(cfg, args[1]);
+        }
+    }
+
+    // run sekali untuk percobaan
+    static void runSingle(Config cfg, String mapFile) throws Exception {
+        int sizeNumber = sizeNumberFromFilename(mapFile);
+        int budget = budgetForSize(sizeNumber);
+        int maxGen = budget / cfg.popSize;
+
+        Preprocessed prep = loadAndPreprocess(mapFile);
+
+        long seed = System.currentTimeMillis();
+
+        Individual best = runGA(prep, cfg.popSize, TOURN_SIZE,
+                cfg.pc, cfg.pm, cfg.elitism, maxGen, seed);
+
+        System.out.printf("%d %.5f%n", prep.p, best.getCost());
+        for (int cellId : best.getChromosome()) {
+            Point pt = prep.cellCoords[cellId];
+            System.out.printf("%d %d%n", pt.col + 1, pt.row + 1);
+        }
+    }
+
+    // loop dari map files, terus isi ke dalam csv
+    static void runExperiment(Config cfg, String outputCsv) throws Exception {
+        int[] seeds = new int[NUM_SEEDS];
+        Random r = new Random(NPM);
+        for (int i = 0; i < NUM_SEEDS; i++) {
+            seeds[i] = r.nextInt(65537);
+        }
+
+        try (PrintWriter out = new PrintWriter(outputCsv)) {
+            out.println("map,pop_size,pc,pm,elitism,cost,eval_count");
+
+            for (String path : MAP_FILES) {
+                Preprocessed prep = loadAndPreprocess(path);
+                int sizeNumber = sizeNumberFromFilename(path);
+                int budget = budgetForSize(sizeNumber);
+
+                // maxGen dihitung dari budget / popSize
+                int maxGen = budget / cfg.popSize;
+
+                for (int seed : seeds) {
+                    Individual best = runGA(prep, cfg.popSize, TOURN_SIZE,
+                            cfg.pc, cfg.pm, cfg.elitism, maxGen, seed);
+
+                    out.printf("%s,%d,%.2f,%.2f,%.2f,%.6f,%d%n",
+                            new File(path).getName(),
+                            cfg.popSize, cfg.pc, cfg.pm, cfg.elitism,
+                            best.getCost(), lastEvalCount);
+                }
+            }
+        }
+        System.out.println("Selesai: " + outputCsv);
+    }
+
+    // helper
+    static class Preprocessed {
+        int m, n, p, penalty, numHouses, totalEmpty;
+        Point[] cellCoords;
+        int[][] distance;
+    }
+
+    // baca path untuk membuat map-nya dan banyak firestation
+    static Preprocessed loadAndPreprocess(String path) throws Exception {
+        Scanner sc = new Scanner(new File(path));
+        int m = sc.nextInt(), n = sc.nextInt(), p = sc.nextInt();
+        sc.nextLine();
         char[][] grid = new char[m][n];
-        int rowsRead = 0;
-
-        while (rowsRead < m && scanner.hasNextLine()) {
-            String line = scanner.nextLine().trim();
-            if (line.isEmpty()) continue; // Lewati baris kosong jika ada
-
-            for (int c = 0; c < Math.min(n, line.length()); c++) {
-                grid[rowsRead][c] = line.charAt(c);
-            }
-            rowsRead++;
-        }
-
-        scanner.close();
-
-        int penaltyValue = m * n;
-
-        // 3. Preprocessing: Petakan ID sel kosong dan buat Lookup Table Koordinat
-        int totalEmptyCells = 0;
         for (int r = 0; r < m; r++) {
-            for (int c = 0; c < n; c++) {
-                if (grid[r][c] == '.') totalEmptyCells++;
-            }
+            String line = sc.nextLine().trim();
+            for (int c = 0; c < n; c++) grid[r][c] = line.charAt(c);
         }
+        sc.close();
+        return preprocess(grid, p);
+    }
 
-        Point[] cellCoordinates = new Point[totalEmptyCells + 1];
+    // mengubah petak / sell (x,y) menjadi ID dan
+    // melakukan flood fill dari house ke firestation untuk menyimpan jaraknya
+    static Preprocessed preprocess(char[][] grid, int p) {
+        int m = grid.length, n = grid[0].length;
+        Preprocessed prep = new Preprocessed();
+        prep.m = m; prep.n = n; prep.p = p; prep.penalty = m * n;
+
+        int totalEmpty = 0;
+        for (int r = 0; r < m; r++)
+            for (int c = 0; c < n; c++)
+                if (grid[r][c] == '.') totalEmpty++;
+        prep.totalEmpty = totalEmpty;
+
+        prep.cellCoords = new Point[totalEmpty + 1];
         int[][] cellID = new int[m][n];
-        int idCounter = 1;
-
-        for (int r = 0; r < m; r++) {
-            for (int c = 0; c < n; c++) {
+        int id = 1;
+        for (int r = 0; r < m; r++)
+            for (int c = 0; c < n; c++)
                 if (grid[r][c] == '.') {
-                    cellID[r][c] = idCounter;
-                    cellCoordinates[idCounter] = new Point(r, c);
-                    idCounter++;
+                    cellID[r][c] = id;
+                    prep.cellCoords[id] = new Point(r, c);
+                    id++;
+                }
+
+        List<Point> houses = new ArrayList<>();
+        for (int r = 0; r < m; r++)
+            for (int c = 0; c < n; c++)
+                if (grid[r][c] == 'H') houses.add(new Point(r, c));
+        prep.numHouses = houses.size();
+
+        // Matriks jarak precomputed: [numHouses][totalEmptyCells + 1]
+        // Indeks 0 dummy, indeks 1..totalEmptyCells adalah ID sel kosong.
+        prep.distance = new int[houses.size()][totalEmpty + 1];
+        for (int h = 0; h < houses.size(); h++) {
+            Point hp = houses.get(h);
+            prep.distance[h] = BFS.houseFloodFill(
+                    grid, hp.row, hp.col, cellID, totalEmpty);
+        }
+        return prep;
+    }
+
+    /**
+     * Jalankan GA tepat maxGen generasi.
+     */
+    static Individual runGA(Preprocessed prep, int popSize, int tournSize,
+                            double pc, double pm, double elitism,
+                            int maxGen, long seed) {
+
+        Population population = new Population(popSize);
+        population.initializeRandomPopulation(prep.totalEmpty, prep.p, new Random(seed));
+
+        GeneticAlgorithm ga = new GeneticAlgorithm(
+                prep.distance, prep.numHouses, prep.totalEmpty, prep.p, prep.penalty,
+                pc, pm, elitism, seed,
+                new TournamentSelection(tournSize),
+                new SinglePointCrossover(),
+                new RandomReplacementMutation(),
+                EvolutionModel.GENERATIONAL);
+
+        // Evaluasi populasi awal
+        ga.evaluatePopulation(population);
+        population.sortByFitness();
+
+        // Inisialisasi pelacak stagnasi dari populasi awal
+        double bestFitness = population.getBestIndividual().getFitness();
+        int stagnantCounter = 0;
+
+        // Kondisi berhenti hingga sampai maxGen atau berhenti lebih awal jika stagnan
+        for (int gen = 0; gen < maxGen; gen++) {
+            ga.evolveStep(population);
+            population.sortByFitness();
+
+            double currentBest = population.getBestIndividual().getFitness();
+            if (currentBest > bestFitness + 1e-12) {
+                bestFitness = currentBest;
+                stagnantCounter = 0;
+            } else {
+                stagnantCounter++;
+                if (stagnantCounter >= MAX_STAGNANT) {
+                    break; // berhenti karena stagnan
                 }
             }
         }
 
-        // 4. Kumpulkan rumah & jalankan BFS Preprocessing sekali di awal
-        List<Point> houses = new ArrayList<>();
-        for (int r = 0; r < m; r++) {
-            for (int c = 0; c < n; c++) {
-                if (grid[r][c] == 'H') houses.add(new Point(r, c));
-            }
+        lastEvalCount = ga.getEvaluationCount();
+        return population.getBestIndividual();
+    }
+
+    /** Ambil angka ukuran dari nama file: "n40_labirin_04.txt" -> 40. */
+    static int sizeNumberFromFilename(String path) {
+        String name = new File(path).getName();
+        int i = 1;
+        while (i < name.length() && Character.isDigit(name.charAt(i))) i++;
+        return Integer.parseInt(name.substring(1, i));
+    }
+
+    /** Evaluation budget berdasarkan ukuran grid. */
+    static int budgetForSize(int size) {
+        switch (size) {
+            case 10: return 10000;
+            case 20: return 50000;
+            case 40: return 200000;
+            case 80: return 500000;
+            default: return 50000;
         }
-
-        int numHouses = houses.size();
-        int[][] distanceMatrix = new int[numHouses][totalEmptyCells + 1];
-
-        for (int h = 0; h < numHouses; h++) {
-            Point house = houses.get(h);
-            distanceMatrix[h] = BFS.houseFloodFill(grid, house.row, house.col, cellID, totalEmptyCells);
-        }
-
-        // 5. Inisialisasi Populasi Awal
-        int populationSize = POPULATION_SIZE;
-        Population population = new Population(populationSize);
-        population.initializeRandomPopulation(totalEmptyCells, p, new Random(SEED));
-
-        // 6. Inisialisasi Mesin GA dengan Strategy Pattern
-        GeneticAlgorithm ga = new GeneticAlgorithm(
-            distanceMatrix, numHouses, totalEmptyCells, p, penaltyValue,
-            CROSSOVER_RATE,   // crossover rate
-            MUTATION_RATE,  // mutation rate
-            ELITISM_RATE,  // elitism rate
-            SEED,    // seed acak
-            new TournamentSelection(TOURNAMENT_SIZE),      // Strategi Seleksi (k=3)
-            new SinglePointCrossover(),                     // Strategi Crossover + Repair
-            new RandomReplacementMutation(),                // Strategi Mutasi
-            EvolutionModel.GENERATIONAL                     // Model Generasi
-        );
-
-        // Evaluasi populasi awal
-        // Membersihkan sisa newline di baris pertama
-        ga.evaluatePopulation(population);
-
-        // 7. Jalankan Looping Generasi (Misal: 100 generasi)
-        int maxGenerations = MAX_GENERATION;
-        for (int gen = 1; gen <= maxGenerations; gen++) {
-            ga.evolveStep(population);
-        }
-
-        // 8. Ambil dan Terjemahkan (Decode) Hasil Terbaik ke Koordinat Peta Asli
-        population.sortByFitness();
-        Individual best = population.getBestIndividual();
-
-        System.out.printf("%d %.5f\n", p, best.getCost());
-        for (int cellId : best.getChromosome()) {
-            Point pt = cellCoordinates[cellId];
-            System.out.printf("%d %d\n", pt.row, pt.col);
-        }
-
-        // System.out.println("=========================================");
-        // System.out.println("   HASIL AKHIR ALGORITMA GENETIK (GA)    ");
-        // System.out.println("=========================================");
-        // System.out.println("Cost Terbaik (RMS Distance) : " + best.getCost());
-        // System.out.println("Fitness Terbaik             : " + best.getFitness());
-        // System.out.println("\nTitik Penempatan Fire Station Optimal:");
-        
-        // int counter = 1;
-        // for (int cellId : best.getChromosome()) {
-        //     Point pt = cellCoordinates[cellId];
-        //     System.out.println("  " + counter++ + ". ID Sel: " + cellId + " -> Koordinat (Baris: " + pt.row + ", Kolom: " + pt.col + ")");
-        // }
-        // System.out.println("=========================================");
     }
 }
