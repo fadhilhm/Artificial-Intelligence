@@ -11,15 +11,15 @@ public class Main {
 
     // map file pilihan utk tahap 1
     static final String[] MAP_FILES = {
-            // "TestCases/n20_acak_01.txt",
-            // "TestCases/n20_acak_02.txt",
-            // "TestCases/n20_klaster_01.txt",
-            // "TestCases/n20_labirin_01.txt",
+            "TestCases/n20_acak_01.txt",
+            "TestCases/n20_acak_02.txt",
+            "TestCases/n20_klaster_01.txt",
+            "TestCases/n20_labirin_01.txt",
 
-            "TestCases/n40_acak_01.txt",
-            "TestCases/n40_acak_02.txt",
-            "TestCases/n40_klaster_01.txt",
-            "TestCases/n40_labirin_01.txt",
+            // "TestCases/n40_acak_01.txt",
+            // "TestCases/n40_acak_02.txt",
+            // "TestCases/n40_klaster_01.txt",
+            // "TestCases/n40_labirin_01.txt",
 
             // "TestCases/n80_acak_01.txt",
             // "TestCases/n80_acak_02.txt",
@@ -211,9 +211,12 @@ public class Main {
         GeneticAlgorithm ga = new GeneticAlgorithm(
                 prep.distance, prep.numHouses, prep.totalEmpty, prep.p, prep.penalty,
                 pc, pm, elitism, seed,
-                new TournamentSelection(tournSize),
-                new SinglePointCrossover(),
-                new RandomReplacementMutation(),
+                // new TournamentSelection(tournSize),
+                new RouletteWheelSelection(),
+                // new SinglePointCrossover(),
+                new TwoPointCrossover(),
+                // new RandomReplacementMutation(),
+                new SwapMutation(),
                 EvolutionModel.GENERATIONAL);
 
         // Evaluasi populasi awal
