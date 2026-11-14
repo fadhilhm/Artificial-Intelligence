@@ -1,5 +1,9 @@
+package crossover;
+
 import java.util.Arrays;
 import java.util.Random;
+
+import model.Individual;
 
 /**
  * Kelas ini mengimplementasikan interface Crossover menggunakan metode 

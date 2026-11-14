@@ -1,4 +1,9 @@
+package selection;
+
 import java.util.Random;
+
+import model.Individual;
+import model.Population;
 
 /**
  * Kelas ini mengimplementasikan teknik Tournament Selection (Seleksi Turnamen).

@@ -1,4 +1,9 @@
+package selection;
+
 import java.util.Random;
+
+import model.Individual;
+import model.Population;
 
 /**
  * Interface ini mendefinisikan kontrak utama untuk metode pemilihan induk 
@@ -6,7 +11,7 @@ import java.util.Random;
  * (seperti Tournament Selection, Roulette Wheel, dll.) wajib mengimplementasikan 
  * interface ini untuk memilih individu yang akan bereproduksi.
  */
-interface Selection {
+public interface Selection {
     /**
      * Memilih satu individu dari populasi yang ada untuk dijadikan induk (parent).
      * 

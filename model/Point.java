@@ -1,9 +1,11 @@
+package model;
+
 /**
  * Kelas ini merepresentasikan koordinat posisi (baris dan kolom) pada grid peta.
  */
 public class Point {
-    int row; // Indeks baris pada grid
-    int col; // Indeks kolom pada grid
+    public int row; // Indeks baris pada grid
+    public int col; // Indeks kolom pada grid
 
     /**
      * Konstruktor untuk membuat objek Point baru.

@@ -1,4 +1,8 @@
+package crossover;
+
 import java.util.Random;
+
+import model.Individual;
 
 /**
  * Interface ini mendefinisikan kontrak utama untuk berbagai strategi 

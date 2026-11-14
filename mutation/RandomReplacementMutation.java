@@ -1,5 +1,9 @@
+package mutation;
+
 import java.util.Arrays;
 import java.util.Random;
+
+import model.Individual;
 
 /**
  * Implementasi mutasi dengan metode Random Replacement.

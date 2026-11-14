@@ -1,4 +1,8 @@
+package mutation;
+
 import java.util.Random;
+
+import model.Individual;
 
 /**
  * Interface untuk operasi mutasi pada algoritma genetika.

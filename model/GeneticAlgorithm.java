@@ -1,4 +1,10 @@
+package model;
+
 import java.util.Random;
+
+import crossover.Crossover;
+import mutation.Mutation;
+import selection.Selection;
 
 public class GeneticAlgorithm {
 
@@ -157,8 +163,7 @@ public class GeneticAlgorithm {
             Individual p1 = selectionStrategy.select(population, rand);
             Individual p2 = selectionStrategy.select(population, rand);
 
-            Individual[] children = crossoverStrategy.crossover(
-                    p1, p2, crossoverRate, p, totalEmptyCells, rand);
+            Individual[] children = crossoverStrategy.crossover(p1, p2, crossoverRate, p, totalEmptyCells, rand);
 
             mutationStrategy.mutate(children[0], mutationRate, totalEmptyCells, rand);
             if (idx + 1 < populationSize) {
@@ -202,7 +207,7 @@ public class GeneticAlgorithm {
         int worstIdx = populationSize - 1;
         int eliteCount = computeEliteCount(populationSize);
 
-        // Elitism implisit: individu top e% tidak boleh digantikan
+        // individu top e% tidak boleh digantikan
         if (worstIdx < eliteCount) {
             return;
         }

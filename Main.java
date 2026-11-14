@@ -1,4 +1,10 @@
 import java.util.*;
+
+import model.*;
+import mutation.*;
+import selection.*;
+import crossover.*;
+
 import java.io.*;
 
 public class Main {
@@ -32,21 +38,17 @@ public class Main {
     // menghitung berapa kali populasi dievaluasi
     static int lastEvalCount;
 
-    // ============================================================
-    // CONFIG
-    // ============================================================
-
     // config genetic algo (dibaca dari file)
     static class Config {
-        int popSize;
+        int populationSize;
         double pc, pm, elitism;
     }
 
-    // baca config dari file, format: popSize pc pm elitism
+    // baca config dari file, format: populationSize pc pm elitism
     static Config readConfig(String path) throws Exception {
         Scanner sc = new Scanner(new File(path));
         Config c = new Config();
-        c.popSize = sc.nextInt();
+        c.populationSize = sc.nextInt();
         c.pc      = sc.nextDouble();
         c.pm      = sc.nextDouble();
         c.elitism = sc.nextDouble();
@@ -58,7 +60,7 @@ public class Main {
         // java Main config.txt TestCases/xxx.txt       -> single run, grid dari file
         // java Main config.txt experiment out.csv      -> eksperimen semua MAP_FILES
         //
-        // Format config.txt: popSize pc pm elitism
+        // Format config.txt: populationSize pc pm elitism
         if (args.length < 2) {
             System.err.println("Usage:");
             System.err.println("  java Main config.txt experiment output.csv");
@@ -78,15 +80,14 @@ public class Main {
 
     // run sekali untuk percobaan
     static void runSingle(Config cfg, String mapFile) throws Exception {
-        int sizeNumber = sizeNumberFromFilename(mapFile);
-        int budget = budgetForSize(sizeNumber);
-        int maxGen = budget / cfg.popSize;
-
         Preprocessed prep = loadAndPreprocess(mapFile);
-
+        
+        int sizeNumber = prep.n;
+        int budget = budgetFromSize(sizeNumber);
+        int maxGen = budget / cfg.populationSize;
         long seed = System.currentTimeMillis();
 
-        Individual best = runGA(prep, cfg.popSize, TOURN_SIZE,
+        Individual best = runGA(prep, cfg.populationSize, TOURN_SIZE,
                 cfg.pc, cfg.pm, cfg.elitism, maxGen, seed);
 
         System.out.printf("%d %.5f%n", prep.p, best.getCost());
@@ -96,7 +97,7 @@ public class Main {
         }
     }
 
-    // loop dari map files, terus isi ke dalam csv
+    // loop dari array map files, terus isi ke dalam csv
     static void runExperiment(Config cfg, String outputCsv) throws Exception {
         int[] seeds = new int[NUM_SEEDS];
         Random r = new Random(NPM);
@@ -109,19 +110,19 @@ public class Main {
 
             for (String path : MAP_FILES) {
                 Preprocessed prep = loadAndPreprocess(path);
-                int sizeNumber = sizeNumberFromFilename(path);
-                int budget = budgetForSize(sizeNumber);
+                int sizeNumber = prep.n;
+                int budget = budgetFromSize(sizeNumber);
 
-                // maxGen dihitung dari budget / popSize
-                int maxGen = budget / cfg.popSize;
+                // maxGen dihitung dari budget / populationSize
+                int maxGen = budget / cfg.populationSize;
 
                 for (int seed : seeds) {
-                    Individual best = runGA(prep, cfg.popSize, TOURN_SIZE,
+                    Individual best = runGA(prep, cfg.populationSize, TOURN_SIZE,
                             cfg.pc, cfg.pm, cfg.elitism, maxGen, seed);
 
                     out.printf("%s,%d,%.2f,%.2f,%.2f,%.6f,%d%n",
                             new File(path).getName(),
-                            cfg.popSize, cfg.pc, cfg.pm, cfg.elitism,
+                            cfg.populationSize, cfg.pc, cfg.pm, cfg.elitism,
                             best.getCost(), lastEvalCount);
                 }
             }
@@ -139,14 +140,19 @@ public class Main {
     // baca path untuk membuat map-nya dan banyak firestation
     static Preprocessed loadAndPreprocess(String path) throws Exception {
         Scanner sc = new Scanner(new File(path));
-        int m = sc.nextInt(), n = sc.nextInt(), p = sc.nextInt();
+        
+        int m = sc.nextInt(), 
+            n = sc.nextInt(), 
+            p = sc.nextInt();
         sc.nextLine();
+        
         char[][] grid = new char[m][n];
         for (int r = 0; r < m; r++) {
             String line = sc.nextLine().trim();
             for (int c = 0; c < n; c++) grid[r][c] = line.charAt(c);
         }
         sc.close();
+        
         return preprocess(grid, p);
     }
 
@@ -155,15 +161,18 @@ public class Main {
     static Preprocessed preprocess(char[][] grid, int p) {
         int m = grid.length, n = grid[0].length;
         Preprocessed prep = new Preprocessed();
-        prep.m = m; prep.n = n; prep.p = p; prep.penalty = m * n;
+        prep.m = m; 
+        prep.n = n; 
+        prep.p = p; 
+        prep.penalty = m * n;
 
         int totalEmpty = 0;
         for (int r = 0; r < m; r++)
             for (int c = 0; c < n; c++)
                 if (grid[r][c] == '.') totalEmpty++;
         prep.totalEmpty = totalEmpty;
-
         prep.cellCoords = new Point[totalEmpty + 1];
+        
         int[][] cellID = new int[m][n];
         int id = 1;
         for (int r = 0; r < m; r++)
@@ -185,20 +194,18 @@ public class Main {
         prep.distance = new int[houses.size()][totalEmpty + 1];
         for (int h = 0; h < houses.size(); h++) {
             Point hp = houses.get(h);
-            prep.distance[h] = BFS.houseFloodFill(
-                    grid, hp.row, hp.col, cellID, totalEmpty);
+            prep.distance[h] = BFS.houseFloodFill(grid, hp.row, hp.col, cellID, totalEmpty);
         }
+        
         return prep;
     }
 
-    /**
-     * Jalankan GA tepat maxGen generasi.
-     */
-    static Individual runGA(Preprocessed prep, int popSize, int tournSize,
+    // Jalankan GA sebanyak maxGen generasi
+    static Individual runGA(Preprocessed prep, int populationSize, int tournSize,
                             double pc, double pm, double elitism,
                             int maxGen, long seed) {
 
-        Population population = new Population(popSize);
+        Population population = new Population(populationSize);
         population.initializeRandomPopulation(prep.totalEmpty, prep.p, new Random(seed));
 
         GeneticAlgorithm ga = new GeneticAlgorithm(
@@ -223,7 +230,7 @@ public class Main {
             population.sortByFitness();
 
             double currentBest = population.getBestIndividual().getFitness();
-            if (currentBest > bestFitness + 1e-12) {
+            if (currentBest > bestFitness + 1e-9) {
                 bestFitness = currentBest;
                 stagnantCounter = 0;
             } else {
@@ -238,16 +245,8 @@ public class Main {
         return population.getBestIndividual();
     }
 
-    /** Ambil angka ukuran dari nama file: "n40_labirin_04.txt" -> 40. */
-    static int sizeNumberFromFilename(String path) {
-        String name = new File(path).getName();
-        int i = 1;
-        while (i < name.length() && Character.isDigit(name.charAt(i))) i++;
-        return Integer.parseInt(name.substring(1, i));
-    }
-
-    /** Evaluation budget berdasarkan ukuran grid. */
-    static int budgetForSize(int size) {
+    // Evaluation budget berdasarkan ukuran grid.
+    static int budgetFromSize(int size) {
         switch (size) {
             case 10: return 10000;
             case 20: return 50000;
