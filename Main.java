@@ -29,18 +29,18 @@ public class Main {
     };
 
     // tidak dibaca dari config, ubah disini
-    static final int MAX_STAGNANT               = 200;
-    static final Crossover CROSSOVER_TYPE       = new SinglePointCrossover();
-    static final Mutation MUTATION_TYPE         = new RandomReplacementMutation();
-    static final Selection SELECTION_TYPE       = new TournamentSelection(3);
-    static final ChromosomeType CHROMOSOME_TYPE = ChromosomeType.BIT_STRING;
+    static int MAX_STAGNANT               = 200;
+    static Crossover CROSSOVER_TYPE       = new SinglePointCrossover();
+    static Mutation MUTATION_TYPE         = new RandomReplacementMutation();
+    static Selection SELECTION_TYPE       = new TournamentSelection(4);
+    static ChromosomeType CHROMOSOME_TYPE = ChromosomeType.BIT_STRING;
 
     // seed
-    static final int NPM = 24056;
-    static final int NUM_SEEDS = 30;
+    static final int SEED = 24056;
+    static final int NUM_OF_SEEDS = 30;
 
-    // menghitung berapa kali populasi dievaluasi
-    static int lastEvalCount;
+    // untuk cek berapa kali evaluasi dilakukan
+    static int evaluationCount;
 
     // config genetic algo (dibaca dari file)
     static class Config {
@@ -103,14 +103,15 @@ public class Main {
 
     // loop dari array map files, terus isi ke dalam csv
     static void runExperiment(Config cfg, String outputCsv) throws Exception {
-        int[] seeds = new int[NUM_SEEDS];
-        Random r = new Random(NPM);
-        for (int i = 0; i < NUM_SEEDS; i++) {
+        int[] seeds = new int[NUM_OF_SEEDS];
+        Random r = new Random(SEED);
+
+        for (int i = 0; i < NUM_OF_SEEDS; i++) {
             seeds[i] = r.nextInt(65537);
         }
 
         try (PrintWriter out = new PrintWriter(outputCsv)) {
-            out.println("map,pop_size,pc,pm,elitism,cost");
+            out.println("map,pop_size,pc,pm,elitism,cost,evaluation");
 
             for (String path : MAP_FILES) {
                 Preprocessed prep = loadAndPreprocess(path);
@@ -124,10 +125,10 @@ public class Main {
                     Individual best = runGA(prep, cfg.populationSize,
                             cfg.pc, cfg.pm, cfg.elitism, maxGen, seed);
 
-                    out.printf("%s,%d,%.2f,%.2f,%.2f,%.6f%n",
+                    out.printf("%s,%d,%.2f,%.2f,%.2f,%.6f,%d%n",
                             new File(path).getName(),
                             cfg.populationSize, cfg.pc, cfg.pm, cfg.elitism,
-                            best.getCost());
+                            best.getCost(), evaluationCount);
                 }
             }
         }
@@ -212,6 +213,9 @@ public class Main {
         Population population = new Population(populationSize);
         population.initializeRandomPopulation(prep.totalEmpty, prep.p, new Random(seed), CHROMOSOME_TYPE);
 
+        // khusus untuk TargetedMutation, bisa dibiarkan saja
+        TargetedMutation.setContext(prep.distance, prep.numHouses);
+
         GeneticAlgorithm ga = new GeneticAlgorithm(
                 prep.distance, prep.numHouses, prep.totalEmpty, prep.p, prep.penalty,
                 pc, pm, elitism, seed,
@@ -245,7 +249,8 @@ public class Main {
             }
         }
 
-        lastEvalCount = ga.getEvaluationCount();
+        evaluationCount = ga.getEvaluationCount();
+        
         return population.getBestIndividual();
     }
 
