@@ -1,4 +1,4 @@
-40 40 10
+40 40 24
 T..............HT..T..T..T......TTTT..TH
 H...T..H...TH...T.....T......H.T.T.HT.H.
 ..H.T.T..THTT.T.TTHTH.T.TTTHHTTH.H..H...
