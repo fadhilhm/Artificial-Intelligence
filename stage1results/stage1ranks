@@ -1,0 +1,18 @@
+Rank	Chromosome	Selection	Crossover	    Mutation	        Mean cost
+1	    ARRAY_FS	Tournament	Single-point	Random replacement	6.776164
+2	    ARRAY_FS	Tournament	Two-point	    Random replacement	6.778158
+3	    ARRAY_FS	Roulette	Two-point	    Targeted	        6.804121
+
+4	    ARRAY_FS	Roulette	Single-point	Random replacement	6.807126
+5	    BIT_STRING	Roulette	Two-point	    Targeted	        6.808359
+6	    ARRAY_FS	Roulette	Two-point	    Random replacement	6.814847
+7	    BIT_STRING	Roulette	Single-point	Targeted	        6.823659
+8	    ARRAY_FS	Roulette	Single-point	Targeted	        6.825731
+9	    ARRAY_FS	Tournament	Two-point	    Targeted	        7.003472
+10	    BIT_STRING	Tournament	Two-point	    Targeted	        7.013165
+11	    ARRAY_FS	Tournament	Single-point	Targeted	        7.018905
+12	    BIT_STRING	Tournament	Single-point	Targeted	        7.022075
+13	    BIT_STRING	Tournament	Single-point	Random replacement	7.652896
+14	    BIT_STRING	Tournament	Two-point	    Random replacement	7.660834
+15	    BIT_STRING	Roulette	Single-point	Random replacement	7.701893
+16	    BIT_STRING	Roulette	Two-point	    Random replacement	7.702811

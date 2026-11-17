@@ -1,12 +1,10 @@
+import crossover.*;
+import java.io.*;
 import java.util.*;
-
 import model.*;
 import model.Individual.ChromosomeType;
 import mutation.*;
 import selection.*;
-import crossover.*;
-
-import java.io.*;
 
 public class Main {
 
@@ -63,11 +61,13 @@ public class Main {
     public static void main(String[] args) throws Exception {
         // java Main config.txt TestCases/xxx.txt       -> single run, grid dari file
         // java Main config.txt experiment out.csv      -> eksperimen semua MAP_FILES
+        // java Main config.txt stage1 stage1results    -> eksperimen stage1 
         //
         // Format config.txt: populationSize pc pm elitism
         if (args.length < 2) {
             System.err.println("Usage:");
             System.err.println("  java Main config.txt experiment output.csv");
+            System.err.println("  java Main config.txt stage1 output-directory");
             System.err.println("  java Main config.txt TestCases/xxx.txt");
             return;
         }
@@ -75,7 +75,10 @@ public class Main {
         String configFile = args[0];
         Config cfg = readConfig(configFile);
 
-        if (args.length >= 3 && args[1].equalsIgnoreCase("experiment")) {
+        if (args[1].equalsIgnoreCase("stage1")) {
+            String outputDirectory = args.length >= 3 ? args[2] : "stage1results";
+            Stage1Automation.run(cfg, outputDirectory);
+        } else if (args.length >= 3 && args[1].equalsIgnoreCase("experiment")) {
             runExperiment(cfg, args[2]);
         } else {
             runSingle(cfg, args[1]);
@@ -88,6 +91,8 @@ public class Main {
         
         int sizeNumber = prep.n;
         int budget = budgetFromSize(sizeNumber);
+
+        // maxGen dihitung dari budget / populationSize
         int maxGen = budget / cfg.populationSize;
         long seed = System.currentTimeMillis();
 
@@ -117,8 +122,6 @@ public class Main {
                 Preprocessed prep = loadAndPreprocess(path);
                 int sizeNumber = prep.n;
                 int budget = budgetFromSize(sizeNumber);
-
-                // maxGen dihitung dari budget / populationSize
                 int maxGen = budget / cfg.populationSize;
 
                 for (int seed : seeds) {
@@ -209,9 +212,16 @@ public class Main {
     static Individual runGA(Preprocessed prep, int populationSize,
                             double pc, double pm, double elitism,
                             int maxGen, long seed) {
+        return runGA(prep, populationSize, pc, pm, elitism, maxGen, seed,
+                CHROMOSOME_TYPE, SELECTION_TYPE, CROSSOVER_TYPE, MUTATION_TYPE);
+    }
 
+    static Individual runGA(Preprocessed prep, int populationSize,
+                            double pc, double pm, double elitism,
+                            int maxGen, long seed, ChromosomeType chromosomeType,
+                            Selection selection, Crossover crossover, Mutation mutation) {
         Population population = new Population(populationSize);
-        population.initializeRandomPopulation(prep.totalEmpty, prep.p, new Random(seed), CHROMOSOME_TYPE);
+        population.initializeRandomPopulation(prep.totalEmpty, prep.p, new Random(seed), chromosomeType);
 
         // khusus untuk TargetedMutation, bisa dibiarkan saja
         TargetedMutation.setContext(prep.distance, prep.numHouses);
@@ -219,9 +229,9 @@ public class Main {
         GeneticAlgorithm ga = new GeneticAlgorithm(
                 prep.distance, prep.numHouses, prep.totalEmpty, prep.p, prep.penalty,
                 pc, pm, elitism, seed,
-                SELECTION_TYPE,
-                CROSSOVER_TYPE,
-                MUTATION_TYPE,
+                selection,
+                crossover,
+                mutation,
                 EvolutionModel.GENERATIONAL);
 
         // Evaluasi populasi awal
