@@ -1,0 +1,4 @@
+model_name,chromosome_type,evolution_model,selection_type,tournament_size,crossover_type,mutation_type,t1_pop,t1_pc,t1_pm,t1_elitism,t1_mean_cost_all,t1_mean_cost_tiny,t1_mean_cost_small,t1_mean_cost_normal,t2a_pop,t2a_pc,t2a_pm,t2a_elitism,t2a_mean_cost_all,t2a_mean_cost_tiny,t2a_mean_cost_small,t2a_mean_cost_normal,cost_improvement_pct,t2a_mean_runtime_ms
+Model1,ARRAY_FS,GENERATIONAL,TOURNAMENT,4,SINGLE_POINT,RANDOM_REPLACEMENT,100,0.80,0.05,0.20,7.031759,6.641331,7.204017,7.249931,300,0.85,0.02,0.25,6.982964,6.631230,7.208141,7.109522,0.6939,5234.714
+Model2,ARRAY_FS,GENERATIONAL,TOURNAMENT,4,TWO_POINT,RANDOM_REPLACEMENT,100,0.80,0.05,0.20,7.032267,6.645998,7.219925,7.230878,200,0.95,0.02,0.15,6.982191,6.634417,7.207068,7.105089,0.7121,5219.220
+Model3,ARRAY_FS,GENERATIONAL,ROULETTE,0,TWO_POINT,TARGETED,100,0.80,0.05,0.20,7.062430,6.665357,7.289380,7.232554,300,0.95,0.10,0.25,7.007886,6.632215,7.197994,7.193450,0.7723,5296.289
