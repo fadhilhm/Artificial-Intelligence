@@ -1,0 +1,8 @@
+command: /mnt/c/Program Files/Java/jdk-22/bin/java.exe -cp C:\Users\muham\OneDrive\Documents\Farrel\Kuliah\Artificial Intelligence\Artificial-Intelligence\experiments\stage1\build ExportIO small 13 17 5 experiments/stage1/results/stage1_pilot_io_small_13_17.csv
+returncode: 0
+elapsed_s: 61.03
+--- stdout ---
+done small combos=13..16 seeds=5 -> experiments/stage1/results/stage1_pilot_io_small_13_17.csv
+
+--- stderr ---
+

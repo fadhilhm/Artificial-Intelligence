@@ -1,0 +1,4 @@
+acak     n=20 mean=6.488390 std=0.037130 median=6.478362 min=6.429022 max=6.604396
+klaster  n=20 mean=5.427943 std=0.056687 median=5.439542 min=5.333895 max=5.522876
+labirin  n=20 mean=7.237860 std=0.189886 median=7.228010 min=6.996700 max=7.492635
+overall  n=60 mean=6.384731 std=0.751591 median=6.478362 min=5.333895 max=7.492635
