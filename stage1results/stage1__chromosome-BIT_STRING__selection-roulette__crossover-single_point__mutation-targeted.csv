@@ -1,0 +1,2 @@
+Chromosome,Selection,Crossover,Mutation,Mean cost
+BIT_STRING,roulette,single_point,targeted,6.823659

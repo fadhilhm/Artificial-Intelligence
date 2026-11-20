@@ -1,0 +1,2 @@
+Chromosome,Selection,Crossover,Mutation,Mean cost
+BIT_STRING,roulette,two_point,random_replacement,7.702811

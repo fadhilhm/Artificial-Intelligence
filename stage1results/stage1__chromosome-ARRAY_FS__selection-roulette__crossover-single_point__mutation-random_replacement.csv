@@ -1,0 +1,2 @@
+Chromosome,Selection,Crossover,Mutation,Mean cost
+ARRAY_FS,roulette,single_point,random_replacement,6.807126
