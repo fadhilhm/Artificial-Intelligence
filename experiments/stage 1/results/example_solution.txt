@@ -1,0 +1,33 @@
+map=TestCases/n40_acak_01.txt
+p=24
+model=7
+seed=52315
+rms=4.220346
+mean=3.836478
+evaluations=109780
+houses=159
+empty=1186
+FS 36 2
+FS 8 3
+FS 14 5
+FS 26 6
+FS 7 9
+FS 30 9
+FS 38 9
+FS 20 10
+FS 3 12
+FS 38 14
+FS 25 16
+FS 7 18
+FS 14 19
+FS 33 21
+FS 20 24
+FS 39 24
+FS 26 26
+FS 3 28
+FS 16 32
+FS 35 32
+FS 28 34
+FS 10 35
+FS 21 36
+FS 4 38
